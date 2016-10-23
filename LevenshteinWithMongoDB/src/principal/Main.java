@@ -9,6 +9,7 @@ import com.mongodb.BasicDBObject;
 import java.net.UnknownHostException;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
+import util.LevenshteinRelevance;
 import util.Medicamentos;
 import util.MongoDBConection;
 
@@ -22,27 +23,53 @@ public class Main {
         
         MongoDBConection db = new MongoDBConection("dbmedicamentos");
         
-        List<BasicDBObject> objects= db.getAllDocs("catmat"); 
+        String pesquisa= "SUPLEMENTO PARA MEIO DE CULTURA, VANCOMICINA, PÓ P/ RECONSTITUIÇÃO, 3 M";
         
-        String pesquisa= "ZIDOVUDINAA";
+        List<BasicDBObject> objects= db.getAllDocs("catmat"); 
+        List<LevenshteinRelevance> listaRelevantes = null;
+        int menortxLev=15;
+        String melhorPalavra="";
+        
         
         System.out.println("Buscando: "+pesquisa);
-        objects.stream().forEach((ob) -> {
+        for (BasicDBObject ob :objects){
+//            int idxof = ob.get("TIPL_DESCRICAO").toString().indexOf(',');
+//            if(idxof>ob.get("TIPL_DESCRICAO").toString().length())
+//                idxof=ob.get("TIPL_DESCRICAO").toString().length()-1;
             String cmpLev = ob.get("TIPL_DESCRICAO").toString().replace(",", "");
+           // System.out.println("codigo: "+ob.getString("TIPL_CODIGO").toString()+" "+cmpLev);
+           
             int txLev=  StringUtils.getLevenshteinDistance(pesquisa, cmpLev );
-             
-            if(txLev<10){
-                System.out.println("Taxa Levenshtein: "+txLev);
-                System.out.println(ob.getString("TIPL_CODIGO").toString()+": "+cmpLev);
             
+
+               
+            
+            if(txLev<20){
+                if (txLev<menortxLev){
+                menortxLev = txLev;
+                melhorPalavra = ob.get("TIPL_DESCRICAO").toString();
+                }
+//                System.out.println("Taxa Levenshtein: "+txLev);
+//                System.out.println(ob.getString("TIPL_CODIGO").toString()+": "+cmpLev);
+                
+              //  listaRelevantes.add(new LevenshteinRelevance(txLev, ob));
+
             } 
-        });
+            
+       
+        };
         
-        List<Medicamentos> med = db.doAdvancedSearch(pesquisa, "catmat");
         
-          for (Medicamentos m: med){
+                System.out.println("Menor valor txlev "+menortxLev+ " Melhor texto: "+melhorPalavra);             
+                List<Medicamentos> med = db.doAdvancedSearch(melhorPalavra, "catmat");
+            for (Medicamentos m: med){
               System.out.println("FTS search: "+m.getCodigo()+":"+m.getDescricao());
           }
+        
+        
+      
+        
+     
         
   
     
