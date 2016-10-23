@@ -45,7 +45,8 @@ public class MongoDBConection {
 	public List<BasicDBObject> getAllDocs(String collectionName) {
 		BasicDBObject query = new BasicDBObject();
                 BasicDBObject field = new BasicDBObject();
-                field.put("Descrição do Item",1);
+                field.put("TIPL_CODIGO",1);
+                field.put("TIPL_DESCRICAO",2);
 		DBCursor cursor = getCollection(collectionName).find(query,field);
 		
 		List<BasicDBObject> dbObjects = new ArrayList<BasicDBObject>();
@@ -62,6 +63,21 @@ public class MongoDBConection {
         myList = myCursor.toArray();
 
         return myList;
+    }
+        
+        public List<Medicamentos> doAdvancedSearch(String searchString, String collection) {
+        List<Medicamentos> list = new ArrayList<>();
+
+        DBCursor cursor = getCollection(collection).find(new BasicDBObject("$text", new BasicDBObject("$search", searchString)));
+        while (cursor.hasNext()) {
+            DBObject document = cursor.next();
+            Medicamentos data = new Medicamentos();
+            data.setCodigo((String) document.get("TIPL_CODIGO"));
+            data.setDescricao((String) document.get("TIPL_DESCRICAO"));
+            list.add(data);
+        }
+
+        return list;
     }
         
 	public long cnt(String col) {
